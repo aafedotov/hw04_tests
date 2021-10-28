@@ -12,20 +12,17 @@ class StaticURLTests(TestCase):
     def setUp(self):
         self.guest_client = Client()
 
-    def test_homepage(self):
-        """Проверяем доступность домашней страницы."""
-        response = self.guest_client.get('/')
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    def test_about_page(self):
-        """Проверяем доступность страницы Об авторе."""
-        response = self.guest_client.get('/about/author/')
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    def test_tech_page(self):
-        """Проверяем доступность страницы Технологии."""
-        response = self.guest_client.get('/about/tech/')
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+    def test_static_page(self):
+        """Проверяем доступность страниц."""
+        url_names = [
+            '/',
+            '/about/author/',
+            '/about/tech/',
+        ]
+        for address in url_names:
+            with self.subTest(address=address):
+                response = self.guest_client.get(address)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_unexisting_page(self):
         """Проверяем, что запрос к несуществующей странице вернет 404."""
