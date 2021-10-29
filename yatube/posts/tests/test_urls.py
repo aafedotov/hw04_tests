@@ -8,28 +8,6 @@ from ..models import Group, Post
 User = get_user_model()
 
 
-class StaticURLTests(TestCase):
-    def setUp(self):
-        self.guest_client = Client()
-
-    def test_static_page(self):
-        """Проверяем доступность страниц."""
-        url_names = [
-            '/',
-            '/about/author/',
-            '/about/tech/',
-        ]
-        for address in url_names:
-            with self.subTest(address=address):
-                response = self.guest_client.get(address)
-                self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    def test_unexisting_page(self):
-        """Проверяем, что запрос к несуществующей странице вернет 404."""
-        response = self.guest_client.get('/weird_page')
-        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-
-
 class PostsURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -56,9 +34,12 @@ class PostsURLTests(TestCase):
         self.author_client = Client()
         self.author_client.force_login(self.user_author)
 
-    def test_guest_client_pages(self):
-        """Проверяем общедоступные страницы."""
+    def test_pages_status(self):
+        """Проверяем доступность страниц."""
         url_names = [
+            '/',
+            '/about/author/',
+            '/about/tech/',
             '/group/test/',
             '/profile/auth/',
             '/posts/1/',
@@ -68,6 +49,11 @@ class PostsURLTests(TestCase):
                 response = self.guest_client.get(address)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
+    def test_unexisting_page(self):
+        """Проверяем, что запрос к несуществующей странице вернет 404."""
+        response = self.guest_client.get('/weird_page')
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        
     def test_edit_page_redirect_non_author(self):
         """
         Проверяем, что НЕ автора поста редиректит со страницы редактирования.

@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -39,32 +41,41 @@ class PostTests(TestCase):
             data=form_data,
             follow=True
         )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertRedirects(
             response, reverse(
                 'posts:profile',
-                kwargs={'username': 'author'}
+                kwargs={'username': self.user.username}
             )
         )
         self.assertEqual(Post.objects.count(), post_count + 1)
+        self.assertEqual(Post.objects.first().text, form_data['text'])
+        self.assertIsNone(Post.objects.first().group)
+        self.assertEqual(Post.objects.first().author, self.user)
 
     def test_edit_post(self):
         post_count = Post.objects.count()
         form_data = {
             'text': 'Тестовый текст изменение',
         }
+        test_post = Post.objects.all().first()
         response = self.authorized_client.post(
-            reverse('posts:post_edit', kwargs={'post_id': '1'}),
+            reverse('posts:post_edit', kwargs={'post_id': test_post.pk}),
             data=form_data,
             follow=True
         )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertRedirects(
             response, reverse(
                 'posts:post_detail',
-                kwargs={'post_id': '1'}
+                kwargs={'post_id': test_post.pk}
             )
         )
+        test_post = Post.objects.all().first()
         self.assertEqual(Post.objects.count(), post_count)
         self.assertEqual(
-            Post.objects.get(id=1).text,
-            'Тестовый текст изменение'
+            test_post.text,
+            form_data['text']
         )
+        self.assertIsNone(test_post.group)
+        self.assertEqual(Post.objects.first().author, self.user)

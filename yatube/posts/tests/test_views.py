@@ -24,18 +24,20 @@ class PostTemplatesTests(TestCase):
             slug='test2',
             description='Тестовое описание 2',
         )
-        for i in range(12):
-            Post.objects.create(
-                author=cls.user_author,
-                group=cls.group,
-                text=f'Тестовый пост {i}',
-            )
-        for i in range(12, 15):
-            Post.objects.create(
-                author=cls.user_author2,
-                group=cls.group2,
-                text=f'Тестовый пост {i}',
-            )
+        Post.objects.bulk_create([
+            Post(author=cls.user_author,
+                 group=cls.group,
+                 text=f'Тестовый пост {i}',
+                 ) for i in range(12)
+        ]
+        )
+        Post.objects.bulk_create([
+            Post(author=cls.user_author2, 
+                 group=cls.group2,
+                 text=f'Тестовый пост {i}',
+                 ) for i in range(12, 15)
+        ]
+        )
 
     def setUp(self):
         self.user = PostTemplatesTests.user_author
@@ -46,15 +48,16 @@ class PostTemplatesTests(TestCase):
         """
         Проверяем, что во view-функциях используются правильные html-шаблоны.
         """
+        test_object = Post.objects.all().last()
         templates_pages_names = {
             reverse('posts:index'): 'posts/index.html',
             reverse('posts:group_posts', kwargs={'slug': 'test'}):
                 'posts/group_list.html',
             reverse('posts:profile', kwargs={'username': 'author'}):
                 'posts/profile.html',
-            reverse('posts:post_detail', kwargs={'post_id': '1'}):
+            reverse('posts:post_detail', kwargs={'post_id': test_object.pk}):
                 'posts/post_detail.html',
-            reverse('posts:post_edit', kwargs={'post_id': '1'}):
+            reverse('posts:post_edit', kwargs={'post_id': test_object.pk}):
                 'posts/create_post.html',
             reverse('posts:post_create'): 'posts/create_post.html',
         }
@@ -67,9 +70,10 @@ class PostTemplatesTests(TestCase):
         """Проверяем контекст и паджинатор главной страницы."""
         response = self.authorized_client.get(reverse('posts:index'))
         self.assertEqual(len(response.context['page_obj']), 10)
-        first_object = response.context['page_obj'][0]
-        self.assertEqual(first_object.text, 'Тестовый пост 14')
-        self.assertEqual(first_object.group, PostTemplatesTests.group2)
+        test_object = response.context['page_obj'][0]
+        first_object = Post.objects.all().first()
+        self.assertEqual(test_object.text, first_object.text)
+        self.assertEqual(test_object.group, PostTemplatesTests.group2)
 
     def test_group_page_show_correct_context(self):
         """Проверяем контекст и паджинатор страницы группы."""
@@ -82,7 +86,7 @@ class PostTemplatesTests(TestCase):
         self.assertEqual(len(response.context['page_obj']), 10)
         group_objects = response.context['page_obj']
         for post in group_objects:
-            self.assertEqual(post.group, self.group)
+            self.assertEqual(post.group, PostTemplatesTests.group)
         response = self.authorized_client.get(
             reverse(
                 'posts:group_posts',
@@ -90,7 +94,9 @@ class PostTemplatesTests(TestCase):
             )
         )
         group_objects = response.context['page_obj']
-        self.assertEqual(group_objects[0].text, 'Тестовый пост 14')
+        first_object = Post.objects.all().first()
+        self.assertEqual(group_objects[0].text, first_object.text)
+        self.assertEqual(group_objects[0].group, PostTemplatesTests.group2)
 
     def test_group_profile_show_correct_context(self):
         """Проверяем контекст и паджинатор страницы профиля."""
@@ -107,26 +113,28 @@ class PostTemplatesTests(TestCase):
 
     def test_group_post_detail_show_correct_context(self):
         """Проверяем контекст страницы поста."""
+        first_object = Post.objects.all().last()
         response = self.authorized_client.get(
             reverse(
                 'posts:post_detail',
-                kwargs={'post_id': '1'}
+                kwargs={'post_id': first_object.pk}
             )
         )
         post = response.context['post']
-        self.assertEqual(post.id, 1)
+        self.assertEqual(post.id, first_object.pk)
 
     def test_group_post_edit_show_correct_context(self):
         """Проверяем контекст страницы редактирования поста."""
+        first_object = Post.objects.all().last()
         response = self.authorized_client.get(
             reverse(
                 'posts:post_edit',
-                kwargs={'post_id': '1'}
+                kwargs={'post_id': first_object.pk}
             )
         )
         form = response.context['form']
         post = response.context['post']
-        self.assertEqual(post.id, 1)
+        self.assertEqual(post.id, first_object.pk)
         self.assertIsInstance(form.fields.get('text'), forms.fields.CharField)
         self.assertIsInstance(form.fields['group'], forms.fields.ChoiceField)
 
