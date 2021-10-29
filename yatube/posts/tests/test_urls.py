@@ -53,7 +53,7 @@ class PostsURLTests(TestCase):
         """Проверяем, что запрос к несуществующей странице вернет 404."""
         response = self.guest_client.get('/weird_page')
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        
+
     def test_edit_page_redirect_non_author(self):
         """
         Проверяем, что НЕ автора поста редиректит со страницы редактирования.

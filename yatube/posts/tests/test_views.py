@@ -32,7 +32,7 @@ class PostTemplatesTests(TestCase):
         ]
         )
         Post.objects.bulk_create([
-            Post(author=cls.user_author2, 
+            Post(author=cls.user_author2,
                  group=cls.group2,
                  text=f'Тестовый пост {i}',
                  ) for i in range(12, 15)
