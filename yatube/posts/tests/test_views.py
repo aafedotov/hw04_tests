@@ -51,9 +51,12 @@ class PostTemplatesTests(TestCase):
         test_object = Post.objects.all().last()
         templates_pages_names = {
             reverse('posts:index'): 'posts/index.html',
-            reverse('posts:group_posts', kwargs={'slug': 'test'}):
+            reverse('posts:group_posts',
+                    kwargs={'slug': PostTemplatesTests.group.slug}):
                 'posts/group_list.html',
-            reverse('posts:profile', kwargs={'username': 'author'}):
+            reverse('posts:profile',
+                    kwargs={
+                        'username': PostTemplatesTests.user_author.username}):
                 'posts/profile.html',
             reverse('posts:post_detail', kwargs={'post_id': test_object.pk}):
                 'posts/post_detail.html',
@@ -80,7 +83,7 @@ class PostTemplatesTests(TestCase):
         response = self.authorized_client.get(
             reverse(
                 'posts:group_posts',
-                kwargs={'slug': 'test'}
+                kwargs={'slug': PostTemplatesTests.group.slug}
             )
         )
         self.assertEqual(len(response.context['page_obj']), 10)
@@ -90,7 +93,7 @@ class PostTemplatesTests(TestCase):
         response = self.authorized_client.get(
             reverse(
                 'posts:group_posts',
-                kwargs={'slug': 'test2'}
+                kwargs={'slug': PostTemplatesTests.group2.slug}
             )
         )
         group_objects = response.context['page_obj']
@@ -103,7 +106,7 @@ class PostTemplatesTests(TestCase):
         response = self.authorized_client.get(
             reverse(
                 'posts:profile',
-                kwargs={'username': 'author'}
+                kwargs={'username': PostTemplatesTests.user_author.username}
             )
         )
         self.assertEqual(len(response.context['page_obj']), 10)
