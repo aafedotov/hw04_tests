@@ -8,6 +8,7 @@ from .post_settings import PAGINATOR_SET
 
 
 def pagination(request, to_pagination):
+    """Вспомогательная функция для паджинации."""
     paginator = Paginator(to_pagination, PAGINATOR_SET)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
