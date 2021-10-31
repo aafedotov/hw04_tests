@@ -51,8 +51,10 @@ class PostTemplatesTests(TestCase):
         test_object = Post.objects.all().last()
         templates_pages_names = {
             reverse('posts:index'): 'posts/index.html',
-            reverse('posts:group_posts',
-                    kwargs={'slug': PostTemplatesTests.group.slug}):
+            reverse(
+                'posts:group_posts',
+                kwargs={
+                    'slug': PostTemplatesTests.group.slug}):
                 'posts/group_list.html',
             reverse('posts:profile',
                     kwargs={
