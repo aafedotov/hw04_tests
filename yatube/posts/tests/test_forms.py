@@ -29,9 +29,11 @@ class PostTests(TestCase):
     def setUp(self):
         self.user = PostTests.user_author
         self.authorized_client = Client()
+        self.anonymous_client = Client()
         self.authorized_client.force_login(self.user)
 
     def test_create_post(self):
+        """Проверяем форму создания поста."""
         post_count = Post.objects.count()
         form_data = {
             'text': 'Тестовый текст',
@@ -54,6 +56,7 @@ class PostTests(TestCase):
         self.assertEqual(Post.objects.first().author, self.user)
 
     def test_edit_post(self):
+        """Проверяем форму редактирования поста."""
         post_count = Post.objects.count()
         form_data = {
             'text': 'Тестовый текст изменение',
@@ -79,3 +82,16 @@ class PostTests(TestCase):
         )
         self.assertIsNone(test_post.group)
         self.assertEqual(Post.objects.first().author, self.user)
+
+    def test_anonymous_create_post(self):
+        """Проверяем, что анонимным юзером пост не создается."""
+        post_count = Post.objects.count()
+        form_data = {
+            'text': 'Тестовый текст',
+        }
+        self.anonymous_client.post(
+            reverse('posts:post_create'),
+            data=form_data,
+            follow=True
+        )
+        self.assertEqual(Post.objects.count(), post_count)

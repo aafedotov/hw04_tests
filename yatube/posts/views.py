@@ -1,7 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
 
 from .forms import PostForm
 from .models import Group, Post, User
@@ -75,7 +74,7 @@ def post_create(request):
         post.author = request.user
         post.save()
         return redirect(
-            reverse('posts:profile', args=(request.user.username,)))
+            'posts:profile', request.user.username)
     return render(request, 'posts/create_post.html', {'form': form})
 
 
@@ -83,16 +82,11 @@ def post_edit(request, post_id):
     """View функция для редактирования поста."""
     post = get_object_or_404(Post, id=post_id)
     if post.author != request.user:
-        # для Ревьювера: не понял Ваш комментарий к этому if:
-        # "Может стоит это сделать после проверки на автора?"
-        return redirect(reverse('posts:post_detail', args=(post_id,)))
+        return redirect('posts:post_detail', post_id)
     form = PostForm(request.POST or None, instance=post)
     if form.is_valid():
         form.save()
-        return redirect(reverse('posts:post_detail', args=(post_id,)))
-        # для Ревьювера: без reverse ничего не работает (( Ваш комментарий:
-        # "redirect внутри применяет reverse к адресу, так что не стоит
-        # делать это вручную"
+        return redirect('posts:post_detail', post_id)
     return render(
         request, 'posts/create_post.html',
         {'form': form, 'post': post}
