@@ -2,6 +2,7 @@ from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
+from django.urls import reverse
 
 from ..models import Group, Post
 
@@ -51,33 +52,48 @@ class PostsURLTests(TestCase):
 
     def test_unexisting_page(self):
         """Проверяем, что запрос к несуществующей странице вернет 404."""
-        response = self.guest_client.get('/weird_page')
+        weird_url = '/weird_page'
+        response = self.guest_client.get(weird_url)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
     def test_edit_page_redirect_non_author(self):
         """
         Проверяем, что НЕ автора поста редиректит со страницы редактирования.
         """
-        response = self.authorized_client.get('/posts/1/edit/', follow=True)
-        self.assertRedirects(response, '/posts/1/')
+        get_url = reverse(
+            'posts:post_edit', kwargs={'post_id': PostsURLTests.post.pk}
+        )
+        redirect_url = reverse(
+            'posts:post_detail', kwargs={'post_id': PostsURLTests.post.pk}
+        )
+        response = self.authorized_client.get(get_url, follow=True)
+        self.assertRedirects(response, redirect_url)
 
     def test_edit_page(self):
         """Проверяем, что автору поста доступна страница редактирования."""
-        response = self.author_client.get('/posts/1/edit/')
+        get_url = reverse(
+            'posts:post_edit', kwargs={'post_id': PostsURLTests.post.pk}
+        )
+        response = self.author_client.get(get_url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_create_redirect_non_authorized(self):
         """
         Проверяем, что неавторизованного юзера редиректит.
         """
-        response = self.guest_client.get('/create/', follow=True)
-        self.assertRedirects(response, '/auth/login/?next=/create/')
+        response = self.guest_client.get(
+            reverse('posts:post_create'), follow=True
+        )
+        redirect_url = reverse('users:login') + '?next=' + reverse(
+            'posts:post_create'
+        )
+        self.assertRedirects(response, redirect_url)
 
     def test_create_page(self):
         """
         Проверяем, что авторизованному юзеру доступна страница создания поста.
         """
-        response = self.authorized_client.get('/create/')
+        response = self.authorized_client.get(reverse('posts:post_create'))
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_urls_uses_correct_template(self):
