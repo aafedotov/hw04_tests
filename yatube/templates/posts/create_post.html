@@ -14,7 +14,7 @@
                 {% if view_name  == 'posts:post_edit' %}Редактировать пост{% else %}Новый пост{% endif %}             
               </div>
               <div class="card-body">        
-                <form method="post" action="{% if view_name  == 'posts:post_edit' %}{% url 'posts:post_edit' post.id %}
+                <form method="post" enctype="multipart/form-data" action="{% if view_name  == 'posts:post_edit' %}{% url 'posts:post_edit' post.id %}
                 {% else %}{% url 'posts:post_create' %}{% endif %} ">    
                 {% csrf_token %}     
                   <div class="form-group row my-3 p-3">
@@ -34,11 +34,21 @@
                       Group                  
                     </label>
                     <br>
-                   {{ form.group|addclass:'form-control' }}  
+                   {{ form.group|addclass:'form-control' }}
                     <small id="id_group-help" class="form-text text-muted">
                       Группа, к которой будет относиться пост
                     </small>
                   </div>
+                  <br>
+                      <label for="id_image-help">
+                      Image
+                      </label>
+                  <br>
+                   {{ form.image|addclass:'form-control-file' }}
+                      <small id="id_image-help" class="form-text text-muted">
+                        Изображение к посту
+                      </small>
+                  <br>
                   <div class="d-flex justify-content-end">
                     <button type="submit" class="btn btn-primary">
                       {% if view_name  == 'posts:post_edit' %}Добавить{% else %}Сохранить{% endif %}

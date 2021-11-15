@@ -25,14 +25,15 @@ SECRET_KEY = '$j+!*j(8)wnu)g7i26kr!2l5_sqrohsi*tkh2qllx1l!o0jvn^'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['port-8000-python1-aafedotov.preview.codeanywhere.com',
-                 'port-8000-faa-aafedotov.preview.codeanywhere.com',
-                 '127.0.0.1']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+]
 
 LOGIN_URL = 'users:login'
 LOGIN_REDIRECT_URL = 'posts:index'
 
-EMAIL_BACKEND = 'django.core.mail.backendsfilebased.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 
 POSTS_PAGINATOR_SET = 10
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'sorl.thumbnail',
 ]
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
@@ -132,3 +134,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
