@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from core.models import CreatedModel
 
 User = get_user_model()
 
@@ -50,7 +51,7 @@ class Post(models.Model):
         return self.text[:15]
 
 
-class Comment(models.Model):
+class Comment(CreatedModel):
     post = models.ForeignKey(
         Post,
         related_name='comments',
@@ -67,10 +68,6 @@ class Comment(models.Model):
     text = models.TextField(
         verbose_name='Текст комментария',
         help_text='Введите Ваш комментарий'
-    )
-    created = models.DateTimeField(
-        verbose_name='Дата публикации',
-        auto_now_add=True
     )
 
     class Meta:
