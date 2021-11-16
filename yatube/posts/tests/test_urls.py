@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 
 from ..models import Group, Post
@@ -50,11 +50,14 @@ class PostsURLTests(TestCase):
                 response = self.guest_client.get(address)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
+    @override_settings(DEBUG=False)
     def test_unexisting_page(self):
-        """Проверяем, что запрос к несуществующей странице вернет 404."""
+        """Проверяем, что запрос вернет custom 404."""
         weird_url = '/weird_page'
         response = self.guest_client.get(weird_url)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        template = 'core/404.html'
+        self.assertTemplateUsed(response, template)
 
     def test_edit_page_redirect_non_author(self):
         """

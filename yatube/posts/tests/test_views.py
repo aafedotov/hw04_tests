@@ -214,3 +214,12 @@ class PostTemplatesTests(TestCase):
         form = response.context['form']
         self.assertIsInstance(form.fields.get('text'), forms.fields.CharField)
         self.assertIsInstance(form.fields['group'], forms.fields.ChoiceField)
+
+    def test_cache_index_page(self):
+        """Проверяем кеширование главной страницы."""
+        response1 = self.authorized_client.get(reverse('posts:index'))
+        test_object1 = response1.context['page_obj'][0]
+        #Post.objects.filter(group=PostTemplatesTests.group2).delete()
+        response2 = self.authorized_client.get(reverse('posts:index'))
+        test_object2 = response2.context['page_obj'][0]
+        self.assertEqual(test_object1.text, test_object2.text)
