@@ -8,7 +8,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import Group, Post
+from ..models import Group, Post, Comment
 
 User = get_user_model()
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -78,6 +78,11 @@ class PostTemplatesTests(TestCase):
                  image=cls.uploaded2,
                  ) for i in range(12, 15)
         ]
+        )
+        Comment.objects.create(
+            post=Post.objects.last(),
+            author=cls.user_author,
+            text='Тестовый коммент',
         )
 
     @classmethod
@@ -179,6 +184,14 @@ class PostTemplatesTests(TestCase):
         post = response.context['post']
         self.assertEqual(post.id, first_object.pk)
         self.assertEqual(post.image, first_object.image)
+        self.assertEqual(
+            post.comments.first().text,
+            first_object.comments.first().text
+        )
+        self.assertEqual(
+            post.comments.first().author,
+            first_object.comments.first().author
+        )
 
     def test_group_post_edit_show_correct_context(self):
         """Проверяем контекст страницы редактирования поста."""

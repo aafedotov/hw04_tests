@@ -31,12 +31,12 @@ class PostTests(TestCase):
             text='Тестовый пост'
         )
         small_gif = (
-             b'\x47\x49\x46\x38\x39\x61\x02\x00'
-             b'\x01\x00\x80\x00\x00\x00\x00\x00'
-             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-             b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-             b'\x0A\x00\x3B'
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
         )
         cls.uploaded = SimpleUploadedFile(
             name='small.gif',
@@ -79,6 +79,30 @@ class PostTests(TestCase):
         self.assertTrue(Post.objects.first().image)
         self.assertIsNone(Post.objects.first().group)
         self.assertEqual(Post.objects.first().author, self.user)
+
+    def test_add_comment(self):
+        """Проверяем форму добавления комментария."""
+        test_post = Post.objects.first()
+        comments_count = test_post.comments.all().count()
+        form_data = {
+            'text': 'Тестовый коммент',
+        }
+        response = self.authorized_client.post(
+            reverse('posts:add_comment',
+                    kwargs={'post_id': test_post.pk}
+                    ),
+            data=form_data,
+            follow=True
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertRedirects(
+            response, reverse(
+                'posts:post_detail',
+                kwargs={'post_id': test_post.pk}
+            )
+        )
+        self.assertEqual(test_post.comments.all().count(), comments_count + 1)
+        self.assertEqual(test_post.comments.first().text, form_data['text'])
 
     def test_edit_post(self):
         """Проверяем форму редактирования поста."""
@@ -124,3 +148,23 @@ class PostTests(TestCase):
         )
         self.assertRedirects(response, redirect_url)
         self.assertEqual(Post.objects.count(), post_count)
+
+    def test_anonymous_add_comment(self):
+        """Проверяем, что анонимному юзеру нельзя добавить коммент."""
+        test_post = Post.objects.first()
+        comments_count = test_post.comments.all().count()
+        form_data = {
+            'text': 'Тестовый коммент',
+        }
+        response = self.anonymous_client.post(
+            reverse('posts:add_comment',
+                    kwargs={'post_id': test_post.pk}
+                    ),
+            data=form_data,
+            follow=True
+        )
+        redirect_url = reverse('users:login') + '?next=' + reverse(
+            'posts:add_comment', kwargs={'post_id': test_post.pk}
+        )
+        self.assertRedirects(response, redirect_url)
+        self.assertEqual(test_post.comments.all().count(), comments_count)

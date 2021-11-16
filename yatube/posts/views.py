@@ -109,6 +109,7 @@ def post_edit(request, post_id):
         {'form': form, 'post': post}
     )
 
+
 @login_required
 def add_comment(request, post_id):
     """View функция для добавления комментария."""
