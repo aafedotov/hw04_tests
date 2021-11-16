@@ -1,13 +1,20 @@
+import shutil
+import tempfile
+
 from django import forms
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from ..models import Group, Post
 
 User = get_user_model()
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostTemplatesTests(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -24,10 +31,43 @@ class PostTemplatesTests(TestCase):
             slug='test2',
             description='Тестовое описание 2',
         )
+        small_gif = (
+             b'\x47\x49\x46\x38\x39\x61\x02\x00'
+             b'\x01\x00\x80\x00\x00\x00\x00\x00'
+             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+             b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+             b'\x0A\x00\x3B'
+        )
+        cls.uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
+        small_gif2 = (
+             b'\x47\x49\x46\x38\x39\x61\x02\x00'
+             b'\x01\x00\x80\x00\x00\x00\x00\x00'
+             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+             b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+             b'\x0A\x00\x3B'
+             b'\x47\x49\x46\x38\x39\x61\x02\x00'
+             b'\x01\x00\x80\x00\x00\x00\x00\x00'
+             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+             b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+             b'\x0A\x00\x3B'
+        )
+        cls.uploaded2 = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif2,
+            content_type='image/gif'
+        )
         Post.objects.bulk_create([
             Post(author=cls.user_author,
                  group=cls.group,
                  text=f'Тестовый пост {i}',
+                 image=cls.uploaded,
                  ) for i in range(12)
         ]
         )
@@ -35,9 +75,15 @@ class PostTemplatesTests(TestCase):
             Post(author=cls.user_author2,
                  group=cls.group2,
                  text=f'Тестовый пост {i}',
+                 image=cls.uploaded2,
                  ) for i in range(12, 15)
         ]
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
         self.user = PostTemplatesTests.user_author
@@ -78,7 +124,8 @@ class PostTemplatesTests(TestCase):
         test_object = response.context['page_obj'][0]
         first_object = Post.objects.all().first()
         self.assertEqual(test_object.text, first_object.text)
-        self.assertEqual(test_object.group, PostTemplatesTests.group2)
+        self.assertEqual(test_object.group, first_object.group)
+        self.assertEqual(test_object.image, first_object.image)
 
     def test_group_page_show_correct_context(self):
         """Проверяем контекст и паджинатор страницы группы."""
@@ -99,9 +146,11 @@ class PostTemplatesTests(TestCase):
             )
         )
         group_objects = response.context['page_obj']
-        first_object = Post.objects.all().first()
+        first_object = Post.objects.filter(
+            group=PostTemplatesTests.group2).first()
         self.assertEqual(group_objects[0].text, first_object.text)
-        self.assertEqual(group_objects[0].group, PostTemplatesTests.group2)
+        self.assertEqual(group_objects[0].group, first_object.group)
+        self.assertEqual(group_objects[0].image, first_object.image)
 
     def test_group_profile_show_correct_context(self):
         """Проверяем контекст и паджинатор страницы профиля."""
@@ -113,8 +162,10 @@ class PostTemplatesTests(TestCase):
         )
         self.assertEqual(len(response.context['page_obj']), 10)
         profile_objects = response.context['page_obj']
+        test_object = Post.objects.filter(author=self.user).first()
+        self.assertEqual(profile_objects[0].image, test_object.image)
         for post in profile_objects:
-            self.assertEqual(post.author, self.user)
+            self.assertEqual(post.author, test_object.author)
 
     def test_group_post_detail_show_correct_context(self):
         """Проверяем контекст страницы поста."""
@@ -127,6 +178,7 @@ class PostTemplatesTests(TestCase):
         )
         post = response.context['post']
         self.assertEqual(post.id, first_object.pk)
+        self.assertEqual(post.image, first_object.image)
 
     def test_group_post_edit_show_correct_context(self):
         """Проверяем контекст страницы редактирования поста."""
