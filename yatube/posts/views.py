@@ -46,11 +46,13 @@ def profile(request, username):
     posts = author.posts.all()
     count = posts.count()
     page_obj = pagination(request, posts)
-    following = Follow.objects.filter(
-        user=request.user
-    ).filter(
-        author=author
-    ).exists()
+    following = False
+    if request.user.is_authenticated:
+        following = Follow.objects.filter(
+            user=request.user
+        ).filter(
+            author=author
+        ).exists()
     context = {
         'page_obj': page_obj,
         'count': count,
