@@ -52,7 +52,7 @@ class PostsURLTests(TestCase):
 
     @override_settings(DEBUG=False)
     def test_unexisting_page(self):
-        """Проверяем, что запрос вернет custom 404."""
+        """Проверяем, что вернется custom 404."""
         weird_url = '/weird_page'
         response = self.guest_client.get(weird_url)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)

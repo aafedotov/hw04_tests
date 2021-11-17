@@ -1,6 +1,8 @@
 import shutil
 import tempfile
 
+
+from django.core.cache import cache
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -32,12 +34,12 @@ class PostTemplatesTests(TestCase):
             description='Тестовое описание 2',
         )
         small_gif = (
-             b'\x47\x49\x46\x38\x39\x61\x02\x00'
-             b'\x01\x00\x80\x00\x00\x00\x00\x00'
-             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-             b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-             b'\x0A\x00\x3B'
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
         )
         cls.uploaded = SimpleUploadedFile(
             name='small.gif',
@@ -45,18 +47,18 @@ class PostTemplatesTests(TestCase):
             content_type='image/gif'
         )
         small_gif2 = (
-             b'\x47\x49\x46\x38\x39\x61\x02\x00'
-             b'\x01\x00\x80\x00\x00\x00\x00\x00'
-             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-             b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-             b'\x0A\x00\x3B'
-             b'\x47\x49\x46\x38\x39\x61\x02\x00'
-             b'\x01\x00\x80\x00\x00\x00\x00\x00'
-             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-             b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-             b'\x0A\x00\x3B'
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
         )
         cls.uploaded2 = SimpleUploadedFile(
             name='small.gif',
@@ -218,8 +220,12 @@ class PostTemplatesTests(TestCase):
     def test_cache_index_page(self):
         """Проверяем кеширование главной страницы."""
         response1 = self.authorized_client.get(reverse('posts:index'))
-        test_object1 = response1.context['page_obj'][0]
-        #Post.objects.filter(group=PostTemplatesTests.group2).delete()
+        test_object1 = response1.content
+        Post.objects.filter(group=PostTemplatesTests.group2).delete()
         response2 = self.authorized_client.get(reverse('posts:index'))
-        test_object2 = response2.context['page_obj'][0]
-        self.assertEqual(test_object1.text, test_object2.text)
+        test_object2 = response2.content
+        self.assertEqual(test_object1, test_object2)
+        cache.clear()
+        response3 = self.authorized_client.get(reverse('posts:index'))
+        test_object3 = response3.content
+        self.assertNotEqual(test_object1, test_object3)
