@@ -3,7 +3,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import PostForm, CommentForm
-from .models import Group, Post, User
+from .models import Group, Post, User, Follow
 from .post_settings import PAGINATOR_SET
 
 
@@ -21,6 +21,7 @@ def index(request):
     page_obj = pagination(request, posts)
     context = {
         'page_obj': page_obj,
+        'index': True,
     }
     return render(request, 'posts/index.html', context)
 
@@ -45,10 +46,16 @@ def profile(request, username):
     posts = author.posts.all()
     count = posts.count()
     page_obj = pagination(request, posts)
+    following = Follow.objects.filter(
+        user=request.user
+    ).filter(
+        author=author
+    ).exists()
     context = {
         'page_obj': page_obj,
         'count': count,
         'author': author,
+        'following': following,
     }
     return render(request, 'posts/profile.html', context)
 
@@ -121,3 +128,33 @@ def add_comment(request, post_id):
         comment.post = post
         comment.save()
     return redirect('posts:post_detail', post_id=post_id)
+
+
+@login_required
+def follow_index(request):
+    user = get_object_or_404(User, username=request.user.username)
+    follows = Follow.objects.filter(user=user).values_list('author_id')
+    posts = Post.objects.filter(author_id__in=follows)
+    page_obj = pagination(request, posts)
+    context = {'page_obj': page_obj, 'follow': True}
+    return render(request, 'posts/follow.html', context)
+
+
+@login_required
+def profile_follow(request, username):
+    author = get_object_or_404(User, username=username)
+    follow = Follow(user=request.user, author=author)
+    follow.save()
+    return redirect('posts:profile', username=username)
+
+
+@login_required
+def profile_unfollow(request, username):
+    author = get_object_or_404(User, username=username)
+    follow = get_object_or_404(
+        Follow,
+        user=request.user,
+        author=author
+    )
+    follow.delete()
+    return redirect('posts:profile', username=username)
