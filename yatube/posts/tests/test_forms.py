@@ -8,7 +8,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import Group, Post
+from ..models import Group, Post, Follow
 
 User = get_user_model()
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -20,6 +20,7 @@ class PostTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user_author = User.objects.create_user(username='author')
+        cls.user_author2 = User.objects.create_user(username='author2')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test',
@@ -51,9 +52,48 @@ class PostTests(TestCase):
 
     def setUp(self):
         self.user = PostTests.user_author
+        self.user2 = PostTests.user_author
         self.authorized_client = Client()
+        self.authorized_client2 = Client()
         self.anonymous_client = Client()
         self.authorized_client.force_login(self.user)
+        self.authorized_client.force_login(self.user2)
+
+    def test_follow_unfollow(self):
+        """Проверяем возможность подписки и отписки."""
+        follow_count = Follow.objects.count()
+        response = self.authorized_client.get(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.user2.username}
+            ),
+            follow=True
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertRedirects(
+            response, reverse(
+                'posts:profile',
+                kwargs={'username': self.user2.username}
+            )
+        )
+        self.assertEqual(Follow.objects.count(), follow_count + 1)
+        self.assertEqual(Follow.objects.first().user, self.user)
+        self.assertEqual(Follow.objects.first().author, self.user2)
+        response = self.authorized_client.get(
+            reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': self.user2.username}
+            ),
+            follow=True
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertRedirects(
+            response, reverse(
+                'posts:profile',
+                kwargs={'username': self.user2.username}
+            )
+        )
+        self.assertEqual(Follow.objects.count(), follow_count)
 
     def test_create_post(self):
         """Проверяем форму создания поста."""
