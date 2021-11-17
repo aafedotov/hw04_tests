@@ -10,7 +10,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import Group, Post, Comment
+from ..models import Group, Post, Comment, Follow
 
 User = get_user_model()
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -65,6 +65,10 @@ class PostTemplatesTests(TestCase):
             content=small_gif2,
             content_type='image/gif'
         )
+        Follow.objects.create(
+            user=cls.user_author,
+            author=cls.user_author2
+        )
         Post.objects.bulk_create([
             Post(author=cls.user_author,
                  group=cls.group,
@@ -96,6 +100,13 @@ class PostTemplatesTests(TestCase):
         self.user = PostTemplatesTests.user_author
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+
+    def test_follow_page(self):
+        """Проверяем правильную выдачу на странице подписок."""
+        response = self.authorized_client.get(reverse('posts:follow_index'))
+        follow_objects = response.context['page_obj']
+        for post in follow_objects:
+            self.assertEqual(post.author, PostTemplatesTests.user_author2)
 
     def test_pages_uses_correct_template(self):
         """

@@ -52,12 +52,12 @@ class PostTests(TestCase):
 
     def setUp(self):
         self.user = PostTests.user_author
-        self.user2 = PostTests.user_author
+        self.user2 = PostTests.user_author2
         self.authorized_client = Client()
         self.authorized_client2 = Client()
         self.anonymous_client = Client()
         self.authorized_client.force_login(self.user)
-        self.authorized_client.force_login(self.user2)
+        self.authorized_client2.force_login(self.user2)
 
     def test_follow_unfollow(self):
         """Проверяем возможность подписки и отписки."""
